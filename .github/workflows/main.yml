@@ -1,5 +1,5 @@
 
-name: Replay V8 - 1080p 120FPS 100Mbps 1GB
+name: Replay V8 - 120FPS 100Mbps 1GB Buffer
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   build:
+    name: Replay V8 APK Olustur
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -20,15 +21,69 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f Replay-V8-Kaynak-Proje.zip || {
-            echo 'Replay-V8-Kaynak-Proje.zip depoda bulunamadi'
+
+          ZIP="Replay-V8-Kaynak-Proje.zip"
+
+          if [ ! -f "$ZIP" ]; then
+            echo "HATA: Replay V8 kaynak ZIP bulunamadi!"
             exit 1
-          }
-          unzip -oq Replay-V8-Kaynak-Proje.zip
-          test -f ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayCapture.java
-          test -f ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayBuffer.java
-          grep -q '1_073_741_824L' ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayBuffer.java
-          echo 'V8 kaynak proje hazir.'
+          fi
+
+          unzip -oq "$ZIP"
+
+          ROOT="ReplayGeriyeDonuk_v2"
+          JAVA="$ROOT/app/src/main/java/com/example/replaygeri"
+
+          test -f "$JAVA/MainActivity.java"
+          test -f "$JAVA/ReplayCapture.java"
+          test -f "$JAVA/ReplayBuffer.java"
+          test -f "$JAVA/ReplayService.java"
+
+          echo "Replay V8 kaynak kodlari bulundu."
+
+      - name: V8 ozelliklerini dogrula
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          JAVA="ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri"
+
+          grep -Fq '"75 Mbps"' \
+            "$JAVA/MainActivity.java"
+
+          grep -Fq '"100 Mbps"' \
+            "$JAVA/MainActivity.java"
+
+          grep -Fq '"120 FPS"' \
+            "$JAVA/MainActivity.java"
+
+          grep -Fq '1_073_741_824L' \
+            "$JAVA/ReplayBuffer.java"
+
+          grep -Fq '70_000_000L' \
+            "$JAVA/ReplayBuffer.java"
+
+          grep -Fq 'MIMETYPE_VIDEO_HEVC' \
+            "$JAVA/ReplayCapture.java"
+
+          grep -Fq 'MIMETYPE_VIDEO_AVC' \
+            "$JAVA/ReplayCapture.java"
+
+          grep -Fq 'spinOnce(bubble)' \
+            "$JAVA/ReplayService.java"
+
+          test -f \
+            ReplayGeriyeDonuk_v2/app/src/main/res/drawable-nodpi/replay_launcher.webp
+
+          echo "V8 ayarlari dogrulandi!"
+          echo "75 Mbps: mevcut"
+          echo "100 Mbps: mevcut"
+          echo "120 FPS: mevcut"
+          echo "1 GB disk tamponu: mevcut"
+          echo "70 saniye tampon penceresi: mevcut"
+          echo "H265 ve H264: mevcut"
+          echo "V5 ok animasyonu: mevcut"
+          echo "V6 logo: mevcut"
 
       - name: Java 17 kur
         uses: actions/setup-java@v4
@@ -42,18 +97,24 @@ jobs:
           packages: platform-tools
 
       - name: Android 35 kur
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        shell: bash
+        run: |
+          sdkmanager \
+            'platforms;android-35' \
+            'build-tools;35.0.0'
 
       - name: Gradle 8.9 kur
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: V8 APK derle
+      - name: Replay V8 APK derle
         working-directory: ReplayGeriyeDonuk_v2
-        run: gradle --no-daemon :app:assembleDebug
+        shell: bash
+        run: |
+          gradle --no-daemon :app:assembleDebug
 
-      - name: APK dosyasini yayimla
+      - name: Replay V8 APK yayimla
         uses: actions/upload-artifact@v4
         with:
           name: Replay-V8-APK
