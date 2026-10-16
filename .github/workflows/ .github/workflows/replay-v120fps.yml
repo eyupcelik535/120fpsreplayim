@@ -1,0 +1,61 @@
+
+name: Replay V8 - 1080p 120FPS 100Mbps 1GB
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Kaynak kodunu al
+        uses: actions/checkout@v4
+
+      - name: Replay V8 kaynak projesini ac
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f Replay-V8-Kaynak-Proje.zip || {
+            echo 'Replay-V8-Kaynak-Proje.zip depoda bulunamadi'
+            exit 1
+          }
+          unzip -oq Replay-V8-Kaynak-Proje.zip
+          test -f ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayCapture.java
+          test -f ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayBuffer.java
+          grep -q '1_073_741_824L' ReplayGeriyeDonuk_v2/app/src/main/java/com/example/replaygeri/ReplayBuffer.java
+          echo 'V8 kaynak proje hazir.'
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Android 35 kur
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Gradle 8.9 kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: V8 APK derle
+        working-directory: ReplayGeriyeDonuk_v2
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: APK dosyasini yayimla
+        uses: actions/upload-artifact@v4
+        with:
+          name: Replay-V8-APK
+          path: ReplayGeriyeDonuk_v2/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
