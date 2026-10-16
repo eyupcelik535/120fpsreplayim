@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ZIP="Replay-V8-Kaynak-Proje.zip"
+          ZIP="Replay-V8-Kaynak-Proje-2.zip"
 
           if [ ! -f "$ZIP" ]; then
             echo "HATA: Replay V8 kaynak ZIP bulunamadi!"
@@ -75,15 +75,7 @@ jobs:
           test -f \
             ReplayGeriyeDonuk_v2/app/src/main/res/drawable-nodpi/replay_launcher.webp
 
-          echo "V8 ayarlari dogrulandi!"
-          echo "75 Mbps: mevcut"
-          echo "100 Mbps: mevcut"
-          echo "120 FPS: mevcut"
-          echo "1 GB disk tamponu: mevcut"
-          echo "70 saniye tampon penceresi: mevcut"
-          echo "H265 ve H264: mevcut"
-          echo "V5 ok animasyonu: mevcut"
-          echo "V6 logo: mevcut"
+          echo "V8 ozellikleri dogrulandi."
 
       - name: Java 17 kur
         uses: actions/setup-java@v4
@@ -97,11 +89,8 @@ jobs:
           packages: platform-tools
 
       - name: Android 35 kur
-        shell: bash
         run: |
-          sdkmanager \
-            'platforms;android-35' \
-            'build-tools;35.0.0'
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Gradle 8.9 kur
         uses: gradle/actions/setup-gradle@v4
@@ -110,7 +99,6 @@ jobs:
 
       - name: Replay V8 APK derle
         working-directory: ReplayGeriyeDonuk_v2
-        shell: bash
         run: |
           gradle --no-daemon :app:assembleDebug
 
